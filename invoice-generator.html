@@ -692,6 +692,16 @@
         const previewSection = document.querySelector('.lg\\:col-span-2');
         const wasHidden = previewSection.classList.contains('hidden');
         
+        // Get invoice container for width fix
+        const invoiceContainer = document.querySelector('.invoice-container');
+        const originalStyles = {
+          width: invoiceContainer.style.width,
+          minWidth: invoiceContainer.style.minWidth,
+          maxWidth: invoiceContainer.style.maxWidth,
+          transform: invoiceContainer.style.transform,
+          transformOrigin: invoiceContainer.style.transformOrigin
+        };
+        
         // Temporarily show preview on mobile for PDF generation
         if (wasHidden) {
           previewSection.classList.remove('hidden');
@@ -702,16 +712,29 @@
           previewSection.style.zIndex = '-1';
         }
         
+        // Fix invoice container width to A4 size for consistent layout
+        invoiceContainer.style.width = '210mm';
+        invoiceContainer.style.minWidth = '210mm';
+        invoiceContainer.style.maxWidth = '210mm';
+        
         // Wait for DOM to update before capturing
         setTimeout(function() {
           const { jsPDF } = window.jspdf;
           
           // Capture the invoice container
-          html2canvas(document.querySelector('.invoice-container'), {
+          html2canvas(invoiceContainer, {
             scale: 2, // Higher resolution
             useCORS: true,
-            logging: false
+            logging: false,
+            width: 794, // 210mm in pixels at 96 DPI
+            height: invoiceContainer.scrollHeight,
+            windowWidth: 794 // Force desktop viewport width
           }).then(canvas => {
+            // Restore invoice container styles
+            invoiceContainer.style.width = originalStyles.width;
+            invoiceContainer.style.minWidth = originalStyles.minWidth;
+            invoiceContainer.style.maxWidth = originalStyles.maxWidth;
+            
             // Restore hidden state on mobile after capture
             if (wasHidden) {
               previewSection.classList.add('hidden');
@@ -744,7 +767,12 @@
             // Save the PDF with the specified filename
             pdf.save('echoes_invoice.pdf');
           }).catch(err => {
-            // Restore hidden state on error too
+            // Restore invoice container styles on error too
+            invoiceContainer.style.width = originalStyles.width;
+            invoiceContainer.style.minWidth = originalStyles.minWidth;
+            invoiceContainer.style.maxWidth = originalStyles.maxWidth;
+            
+            // Restore hidden state on mobile after capture
             if (wasHidden) {
               previewSection.classList.add('hidden');
               previewSection.style.position = '';
@@ -756,7 +784,7 @@
             console.error('PDF generation failed:', err);
             alert('PDF generation failed. Please try again.');
           });
-        }, wasHidden ? 800 : 500); // Longer delay if we need to render hidden element
+        }, wasHidden ? 1000 : 500); // Longer delay if we need to render hidden element
       });
     });
 
