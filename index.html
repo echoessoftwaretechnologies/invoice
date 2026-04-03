@@ -111,8 +111,8 @@
       
       // Simple authentication (in a real app, this would be handled by a backend)
       if (authenticateUser(username, password)) {
-        // Redirect to invoice generator page
-        window.location.href = 'invoice-generator.html';
+        // Redirect to 2FA verification page
+        window.location.href = `two-factor-setup.html?username=${encodeURIComponent(username)}&remember=${remember}`;
       } else {
         alert('Invalid credentials. Please try again.');
       }
