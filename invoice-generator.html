@@ -688,6 +688,50 @@
         // Update preview one more time to ensure all values are current
         updatePreview();
         
+        // Detect mobile device
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+          // Mobile: Use print dialog which allows "Save as PDF"
+          const invoiceContainer = document.querySelector('.invoice-container');
+          if (invoiceContainer) {
+            // Create a new window for printing
+            const printWindow = window.open('', '_blank');
+            if (printWindow) {
+              printWindow.document.write(`
+                <html>
+                <head>
+                  <title>Invoice - Echoes Software Technologies</title>
+                  <style>
+                    body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+                    .invoice-container { max-width: 800px; margin: 0 auto; }
+                    @media print {
+                      body { padding: 0; }
+                    }
+                  </style>
+                </head>
+                <body>
+                  ${invoiceContainer.outerHTML}
+                  <script>
+                    window.onload = function() {
+                      setTimeout(function() {
+                        window.print();
+                      }, 500);
+                    };
+                  <\/script>
+                </body>
+                </html>
+              `);
+              printWindow.document.close();
+            } else {
+              // Fallback if popup blocked
+              alert('Please allow popups to download the invoice, or use the Print option from your browser menu.');
+            }
+          }
+          return;
+        }
+        
+        // Desktop: Use jsPDF and html2canvas
         // Wait for DOM to update before capturing
         setTimeout(function() {
           const { jsPDF } = window.jspdf;
@@ -719,6 +763,9 @@
             
             // Save the PDF with the specified filename
             pdf.save('echoes_invoice.pdf');
+          }).catch(err => {
+            console.error('PDF generation error:', err);
+            alert('Failed to generate PDF. Please try using the browser print option (Ctrl+P or Cmd+P) and select "Save as PDF".');
           });
         }, 500); // Small delay to ensure DOM is updated
       });
