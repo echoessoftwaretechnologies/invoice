@@ -688,6 +688,20 @@
         // Update preview one more time to ensure all values are current
         updatePreview();
         
+        // Get preview section to handle mobile visibility
+        const previewSection = document.querySelector('.lg\\:col-span-2');
+        const wasHidden = previewSection.classList.contains('hidden');
+        
+        // Temporarily show preview on mobile for PDF generation
+        if (wasHidden) {
+          previewSection.classList.remove('hidden');
+          previewSection.style.position = 'fixed';
+          previewSection.style.left = '-9999px';
+          previewSection.style.top = '0';
+          previewSection.style.width = '210mm';
+          previewSection.style.zIndex = '-1';
+        }
+        
         // Wait for DOM to update before capturing
         setTimeout(function() {
           const { jsPDF } = window.jspdf;
@@ -698,6 +712,16 @@
             useCORS: true,
             logging: false
           }).then(canvas => {
+            // Restore hidden state on mobile after capture
+            if (wasHidden) {
+              previewSection.classList.add('hidden');
+              previewSection.style.position = '';
+              previewSection.style.left = '';
+              previewSection.style.top = '';
+              previewSection.style.width = '';
+              previewSection.style.zIndex = '';
+            }
+            
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
             const imgWidth = 210; // A4 width in mm
@@ -719,8 +743,20 @@
             
             // Save the PDF with the specified filename
             pdf.save('echoes_invoice.pdf');
+          }).catch(err => {
+            // Restore hidden state on error too
+            if (wasHidden) {
+              previewSection.classList.add('hidden');
+              previewSection.style.position = '';
+              previewSection.style.left = '';
+              previewSection.style.top = '';
+              previewSection.style.width = '';
+              previewSection.style.zIndex = '';
+            }
+            console.error('PDF generation failed:', err);
+            alert('PDF generation failed. Please try again.');
           });
-        }, 500); // Small delay to ensure DOM is updated
+        }, wasHidden ? 800 : 500); // Longer delay if we need to render hidden element
       });
     });
 
