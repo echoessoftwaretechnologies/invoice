@@ -688,26 +688,20 @@
         // Update preview one more time to ensure all values are current
         updatePreview();
         
-        // Show loading state
-        const btn = document.getElementById('generateInvoiceBtn');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i data-lucide="loader-2" class="h-4 w-4 inline mr-2 animate-spin"></i>Generating...';
-        btn.disabled = true;
-        
         // Wait for DOM to update before capturing
         setTimeout(function() {
           const { jsPDF } = window.jspdf;
           
           // Capture the invoice container
           html2canvas(document.querySelector('.invoice-container'), {
-            scale: 2,
+            scale: 2, // Higher resolution
             useCORS: true,
             logging: false
           }).then(canvas => {
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
-            const imgWidth = 210;
-            const pageHeight = 297;
+            const imgWidth = 210; // A4 width in mm
+            const pageHeight = 297; // A4 height in mm
             const imgHeight = canvas.height * imgWidth / canvas.width;
             let heightLeft = imgHeight;
             let position = 0;
@@ -715,6 +709,7 @@
             pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
             heightLeft -= pageHeight;
             
+            // Add additional pages if content is taller than A4
             while (heightLeft >= 0) {
               position = heightLeft - imgHeight;
               pdf.addPage();
@@ -722,47 +717,20 @@
               heightLeft -= pageHeight;
             }
             
-            // Check if mobile device
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            
-            if (isMobile) {
-              // For mobile: use Blob and createObjectURL for better compatibility
-              try {
-                const pdfBlob = pdf.output('blob');
-                const blobUrl = URL.createObjectURL(pdfBlob);
-                
-                // Create a temporary anchor element
-                const link = document.createElement('a');
-                link.href = blobUrl;
-                link.download = 'echoes_invoice.pdf';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                // Clean up the blob URL
-                setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
-              } catch (e) {
-                // Fallback: open in new tab
-                const pdfData = pdf.output('datauristring');
-                window.open(pdfData, '_blank');
-              }
-            } else {
-              // For desktop: save directly
-              pdf.save('echoes_invoice.pdf');
-            }
-            
-            // Restore button state
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-            lucide.createIcons();
-          }).catch(err => {
-            console.error('PDF generation error:', err);
-            alert('Failed to generate PDF. Please try again.');
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-            lucide.createIcons();
+            // Save the PDF with the specified filename
+            // Mobile-compatible download using blob URL
+            const pdfBlob = pdf.output('blob');
+            const blobUrl = URL.createObjectURL(pdfBlob);
+            const downloadLink = document.createElement('a');
+            downloadLink.href = blobUrl;
+            downloadLink.download = 'echoes_invoice.pdf';
+            downloadLink.style.display = 'none';
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            URL.revokeObjectURL(blobUrl);
           });
-        }, 500);
+        }, 500); // Small delay to ensure DOM is updated
       });
     });
 
