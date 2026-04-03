@@ -717,18 +717,43 @@
               heightLeft -= pageHeight;
             }
             
-            // Save the PDF with the specified filename
-            // Mobile-compatible download using blob URL
+            // Save the PDF - mobile compatible approach
             const pdfBlob = pdf.output('blob');
             const blobUrl = URL.createObjectURL(pdfBlob);
-            const downloadLink = document.createElement('a');
-            downloadLink.href = blobUrl;
-            downloadLink.download = 'echoes_invoice.pdf';
-            downloadLink.style.display = 'none';
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
-            URL.revokeObjectURL(blobUrl);
+            
+            // Check if mobile device
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+              // For mobile: open in new tab (more reliable than auto-download)
+              const newWindow = window.open(blobUrl, '_blank');
+              if (!newWindow) {
+                // If popup blocked, try alternative method
+                const downloadLink = document.createElement('a');
+                downloadLink.href = blobUrl;
+                downloadLink.download = 'echoes_invoice.pdf';
+                downloadLink.target = '_blank';
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                setTimeout(() => {
+                  document.body.removeChild(downloadLink);
+                  URL.revokeObjectURL(blobUrl);
+                }, 1000);
+              } else {
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+              }
+            } else {
+              // Desktop: use traditional download
+              const downloadLink = document.createElement('a');
+              downloadLink.href = blobUrl;
+              downloadLink.download = 'echoes_invoice.pdf';
+              document.body.appendChild(downloadLink);
+              downloadLink.click();
+              setTimeout(() => {
+                document.body.removeChild(downloadLink);
+                URL.revokeObjectURL(blobUrl);
+              }, 1000);
+            }
           });
         }, 500); // Small delay to ensure DOM is updated
       });
