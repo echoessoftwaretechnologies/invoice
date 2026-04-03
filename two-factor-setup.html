@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Two-Factor Authentication Setup - Echoes Software Technologies</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'vivid-blue': '#1864ff'
+          },
+          fontFamily: {
+            sans: ['Poppins', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #f0f4ff 0%, #e6f0ff 100%);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-md">
+    <div class="bg-white shadow-xl p-8 border border-gray-100">
+      <div class="flex justify-center mb-6">
+        <img src="2.png" alt="Echoes Software Technologies Logo" class="w-[150px] h-[40px] object-contain"> <!-- Logo with 150*40px dimensions -->
+      </div>
+      <div class="text-center mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">Two-Factor Authentication</h1>
+        <p class="text-gray-600 mt-2">Scan the QR code with Google Authenticator</p>
+      </div>
+      
+      <div class="text-center mb-6">
+        <div id="qrContainer" class="flex justify-center mb-4">
+          <div id="qrCode" class="bg-gray-100 p-4 flex items-center justify-center" style="width: 200px; height: 200px;">
+            <p class="text-gray-500 text-sm">QR Code will appear here</p>
+          </div>
+        </div>
+        <p class="text-gray-600 text-sm mb-2">Or enter this code manually:</p>
+        <div class="bg-gray-50 p-3 mb-4">
+          <code id="secretCode" class="text-vivid-blue font-mono text-sm">SECRET_CODE</code>
+        </div>
+        <p class="text-gray-600 text-sm mb-2">Open Google Authenticator and scan the QR code above or enter the code manually.</p>
+                <div class="flex items-center justify-center mt-2">
+                  <div class="w-2 h-2 bg-green-500 mr-2"></div>
+                  <span id="timeRemaining" class="text-sm text-gray-600">Code refreshes in <span id="countdown">30</span>s</span>
+                </div>
+      </div>
+      
+      <form id="verificationForm" class="space-y-6">
+        <div>
+          <label for="verificationCode" class="block text-sm font-medium text-gray-700 mb-1">Enter 6-digit code</label>
+          <input 
+            type="text" 
+            id="verificationCode" 
+            name="verificationCode" 
+            required
+            maxlength="6"
+            class="w-full px-4 py-3 border border-gray-300 focus:ring-2 focus:ring-vivid-blue focus:border-vivid-blue transition-colors text-center text-2xl tracking-widest"
+            placeholder="000000"
+          >
+        </div>
+        
+        <button 
+          type="submit"
+          class="w-full bg-vivid-blue hover:bg-blue-700 text-white font-semibold py-3 px-4 transition-colors duration-200 shadow-md"
+        >
+          Verify Code
+        </button>
+      </form>
+      
+      <div class="mt-6 text-center">
+        <p class="text-gray-600 text-sm">
+          Having trouble? <a href="login.html" class="text-vivid-blue hover:text-blue-700 font-medium">Go back to login</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Generate a random secret for TOTP
+    function generateSecret() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+      let secret = '';
+      for (let i = 0; i < 16; i++) {
+        secret += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return secret;
+    }
+
+    // Generate QR code URL for Google Authenticator
+    function generateQRCode(secret, username) {
+      const issuer = 'Echoes Software Technologies';
+      const account = encodeURIComponent(`${issuer}:${username}`);
+      const encodedSecret = encodeURIComponent(secret);
+      const issuerParam = encodeURIComponent(issuer);
+      
+      return `https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl=otpauth://totp/${account}%3Fsecret%3D${encodedSecret}%26issuer%3D${issuerParam}`;
+    }
+
+    // Generate QR code using client-side library
+    function generateQRCodeImage(secret, username) {
+      const issuer = 'Echoes Software Technologies';
+      const account = `${issuer}:${username}`;
+      const encodedSecret = encodeURIComponent(secret);
+      const issuerParam = encodeURIComponent(issuer);
+      
+      const totpUrl = `otpauth://totp/${account}?secret=${encodedSecret}&issuer=${issuerParam}`;
+      
+      const qrContainer = document.getElementById('qrCode');
+      qrContainer.innerHTML = '';
+      
+      new QRCode(qrContainer, {
+        text: totpUrl,
+        width: 200,
+        height: 200,
+        colorDark: "#1864ff",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+
+    // Verify the entered TOTP code
+    function verifyTOTPCode(secret, enteredCode) {
+      // In a real application, this would involve actual TOTP verification
+      // For demo purposes, we'll just check if the code is valid format
+      if (enteredCode.length !== 6 || !/^\d{6}$/.test(enteredCode)) {
+        return false;
+      }
+      
+      // In a real app, we would calculate the expected TOTP based on the secret and current time
+      // For demo purposes, we'll use a simple approach where we accept any valid 6-digit code
+      // This simulates that the code was verified against the authenticator app
+      return true;
+    }
+    
+    // Function to update the expected code periodically (for demo)
+    function updateTOTPCode() {
+      // Update the countdown display
+      const countdownElement = document.getElementById('countdown');
+      if (countdownElement) {
+        let timeLeft = parseInt(countdownElement.textContent);
+        timeLeft = (timeLeft - 1 + 30) % 30;
+        if (timeLeft === 0) timeLeft = 30;
+        countdownElement.textContent = timeLeft;
+      }
+    }
+    
+    // Update TOTP code every 30 seconds to simulate real TOTP
+    setInterval(updateTOTPCode, 1000);
+    
+    // Initialize countdown timer
+    let timeLeft = 30;
+    const countdownElement = document.getElementById('countdown');
+    
+    function updateCountdown() {
+      timeLeft--;
+      if (timeLeft <= 0) {
+        timeLeft = 30;
+      }
+      countdownElement.textContent = timeLeft;
+    }
+    
+    // Update countdown every second
+    setInterval(updateCountdown, 1000);
+
+    // Initialize the page
+    document.addEventListener('DOMContentLoaded', function() {
+      // Get username from localStorage or URL parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      const username = urlParams.get('username') || 'admin';
+      const remember = urlParams.get('remember') === 'true';
+      
+      // Generate secret and show QR code
+      const secret = generateSecret();
+      document.getElementById('secretCode').textContent = secret;
+      generateQRCodeImage(secret, username);
+      
+      // Store the secret for verification (in a real app, this would be server-side)
+      localStorage.setItem('tempSecret', secret);
+      localStorage.setItem('tempUsername', username);
+      localStorage.setItem('rememberChoice', remember);
+    });
+
+    // Handle form submission
+    document.getElementById('verificationForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const verificationCode = document.getElementById('verificationCode').value.trim();
+      const secret = localStorage.getItem('tempSecret');
+      
+      if (verifyTOTPCode(secret, verificationCode)) {
+        // Store login state
+        const username = localStorage.getItem('tempUsername');
+        const remember = localStorage.getItem('rememberChoice') === 'true';
+        
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('currentUser', username);
+        
+        if (remember) {
+          localStorage.setItem('rememberedUser', username);
+        } else {
+          localStorage.removeItem('rememberedUser');
+        }
+        
+        // Clean up temporary data
+        localStorage.removeItem('tempSecret');
+        localStorage.removeItem('tempUsername');
+        localStorage.removeItem('rememberChoice');
+        
+        // Redirect to admin dashboard
+        window.location.href = 'admin-dashboard.html';
+      } else {
+        alert('Invalid verification code. Please enter a valid 6-digit code from your Google Authenticator app.');
+        
+        // Clear the input field
+        document.getElementById('verificationCode').value = '';
+        document.getElementById('verificationCode').focus();
+      }
+    });
+  </script>
+</body>
+</html>
