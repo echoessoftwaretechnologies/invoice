@@ -688,64 +688,26 @@
         // Update preview one more time to ensure all values are current
         updatePreview();
         
-        // Detect mobile device
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        // Show loading state
+        const btn = document.getElementById('generateInvoiceBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i data-lucide="loader-2" class="h-4 w-4 inline mr-2 animate-spin"></i>Generating...';
+        btn.disabled = true;
         
-        if (isMobile) {
-          // Mobile: Use print dialog which allows "Save as PDF"
-          const invoiceContainer = document.querySelector('.invoice-container');
-          if (invoiceContainer) {
-            // Create a new window for printing
-            const printWindow = window.open('', '_blank');
-            if (printWindow) {
-              printWindow.document.write(`
-                <html>
-                <head>
-                  <title>Invoice - Echoes Software Technologies</title>
-                  <style>
-                    body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
-                    .invoice-container { max-width: 800px; margin: 0 auto; }
-                    @media print {
-                      body { padding: 0; }
-                    }
-                  </style>
-                </head>
-                <body>
-                  ${invoiceContainer.outerHTML}
-                  <script>
-                    window.onload = function() {
-                      setTimeout(function() {
-                        window.print();
-                      }, 500);
-                    };
-                  <\/script>
-                </body>
-                </html>
-              `);
-              printWindow.document.close();
-            } else {
-              // Fallback if popup blocked
-              alert('Please allow popups to download the invoice, or use the Print option from your browser menu.');
-            }
-          }
-          return;
-        }
-        
-        // Desktop: Use jsPDF and html2canvas
         // Wait for DOM to update before capturing
         setTimeout(function() {
           const { jsPDF } = window.jspdf;
           
           // Capture the invoice container
           html2canvas(document.querySelector('.invoice-container'), {
-            scale: 2, // Higher resolution
+            scale: 2,
             useCORS: true,
             logging: false
           }).then(canvas => {
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
-            const imgWidth = 210; // A4 width in mm
-            const pageHeight = 297; // A4 height in mm
+            const imgWidth = 210;
+            const pageHeight = 297;
             const imgHeight = canvas.height * imgWidth / canvas.width;
             let heightLeft = imgHeight;
             let position = 0;
@@ -753,7 +715,6 @@
             pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
             heightLeft -= pageHeight;
             
-            // Add additional pages if content is taller than A4
             while (heightLeft >= 0) {
               position = heightLeft - imgHeight;
               pdf.addPage();
@@ -761,13 +722,37 @@
               heightLeft -= pageHeight;
             }
             
-            // Save the PDF with the specified filename
-            pdf.save('echoes_invoice.pdf');
+            // Check if mobile device
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+              // For mobile: open PDF in new tab
+              const pdfData = pdf.output('datauristring');
+              const newWindow = window.open(pdfData, '_blank');
+              if (!newWindow) {
+                // If popup blocked, create a temporary link
+                const link = document.createElement('a');
+                link.href = pdfData;
+                link.download = 'echoes_invoice.pdf';
+                link.click();
+              }
+            } else {
+              // For desktop: save directly
+              pdf.save('echoes_invoice.pdf');
+            }
+            
+            // Restore button state
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            lucide.createIcons();
           }).catch(err => {
             console.error('PDF generation error:', err);
-            alert('Failed to generate PDF. Please try using the browser print option (Ctrl+P or Cmd+P) and select "Save as PDF".');
+            alert('Failed to generate PDF. Please try again.');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            lucide.createIcons();
           });
-        }, 500); // Small delay to ensure DOM is updated
+        }, 500);
       });
     });
 
