@@ -535,21 +535,6 @@
         });
       }
       
-      // Mobile PDF modal close functionality
-      const closeMobilePdfModal = document.getElementById('closeMobilePdfModal');
-      const mobilePdfModal = document.getElementById('mobilePdfModal');
-      if (closeMobilePdfModal && mobilePdfModal) {
-        closeMobilePdfModal.addEventListener('click', function() {
-          mobilePdfModal.classList.add('hidden');
-        });
-        // Close modal when clicking outside
-        mobilePdfModal.addEventListener('click', function(e) {
-          if (e.target === mobilePdfModal) {
-            mobilePdfModal.classList.add('hidden');
-          }
-        });
-      }
-      
       // Initialize icons
       lucide.createIcons();
       
@@ -732,24 +717,8 @@
               heightLeft -= pageHeight;
             }
             
-            // Save the PDF - mobile compatible approach
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            
-            if (isMobile) {
-              // Mobile: show modal with PDF link
-              const pdfData = pdf.output('datauristring');
-              const mobilePdfLink = document.getElementById('mobilePdfLink');
-              const mobilePdfModal = document.getElementById('mobilePdfModal');
-              
-              if (mobilePdfLink && mobilePdfModal) {
-                mobilePdfLink.href = pdfData;
-                mobilePdfModal.classList.remove('hidden');
-                lucide.createIcons();
-              }
-            } else {
-              // Desktop: auto download
-              pdf.save('echoes_invoice.pdf');
-            }
+            // Save the PDF with the specified filename
+            pdf.save('echoes_invoice.pdf');
           });
         }, 500); // Small delay to ensure DOM is updated
       });
@@ -893,24 +862,5 @@
       return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     }
   </script>
-  <!-- Mobile PDF Modal -->
-  <div id="mobilePdfModal" class="fixed inset-0 z-50 bg-black bg-opacity-80 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg max-w-md w-full p-6 text-center">
-      <div class="mb-4">
-        <i data-lucide="file-text" class="h-16 w-16 text-vivid-blue mx-auto"></i>
-      </div>
-      <h3 class="text-xl font-bold text-gray-900 mb-2">PDF Ready!</h3>
-      <p class="text-gray-600 mb-4">Your invoice PDF has been generated. Tap the button below to open it.</p>
-      <a id="mobilePdfLink" href="#" target="_blank" class="inline-flex items-center justify-center bg-vivid-blue text-white px-6 py-3 rounded-lg font-medium mb-4 w-full">
-        <i data-lucide="download" class="h-5 w-5 mr-2"></i>
-        Open PDF
-      </a>
-      <p class="text-sm text-gray-500">After opening, use your browser's share button to save the PDF.</p>
-      <button id="closeMobilePdfModal" class="mt-4 text-gray-500 hover:text-gray-700 font-medium">
-        Close
-      </button>
-    </div>
-  </div>
-
 </body>
 </html>
