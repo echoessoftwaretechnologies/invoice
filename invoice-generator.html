@@ -496,33 +496,42 @@
         window.location.href = 'login.html';
       }
       
-      // Initialize logout functionality
-      document.getElementById('logoutButton').addEventListener('click', function() {
-        // Clear login state
-        localStorage.removeItem('isLoggedIn');
-        localStorage.removeItem('currentUser');
-        
-        // Redirect to index page
-        window.location.href = 'index.html';
-      });
+      // Initialize logout functionality with error handling
+      const logoutButton = document.getElementById('logoutButton');
+      if (logoutButton) {
+        logoutButton.addEventListener('click', function(e) {
+          e.preventDefault();
+          // Clear login state
+          localStorage.removeItem('isLoggedIn');
+          localStorage.removeItem('currentUser');
+          console.log('Logout clicked - redirecting to index.html');
+          // Redirect to index page
+          window.location.href = 'index.html';
+        });
+      } else {
+        console.error('logoutButton not found');
+      }
       
       // Display current user's name in header and sidebar
       const currentUser = localStorage.getItem('currentUser');
       if (currentUser) {
-        document.getElementById('currentUserName').textContent = currentUser;
-        document.getElementById('sidebarUserName').textContent = currentUser;
+        const currentUserNameEl = document.getElementById('currentUserName');
+        const sidebarUserNameEl = document.getElementById('sidebarUserName');
+        if (currentUserNameEl) currentUserNameEl.textContent = currentUser;
+        if (sidebarUserNameEl) sidebarUserNameEl.textContent = currentUser;
       }
       
       // Initialize sidebar logout functionality
       const sidebarLogoutButton = document.getElementById('sidebarLogoutButton');
       if (sidebarLogoutButton) {
-        sidebarLogoutButton.addEventListener('click', function() {
+        sidebarLogoutButton.addEventListener('click', function(e) {
+          e.preventDefault();
           // Clear login state
           localStorage.removeItem('isLoggedIn');
           localStorage.removeItem('currentUser');
-          
-          // Redirect to login page
-          window.location.href = 'login.html';
+          console.log('Sidebar logout clicked - redirecting to index.html');
+          // Redirect to index page
+          window.location.href = 'index.html';
         });
       }
       
